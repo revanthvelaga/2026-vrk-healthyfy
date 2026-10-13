@@ -1,22 +1,56 @@
 # Healthyfi
 
-A personal HealthifyMe-style health tracker for Android. Kotlin + Jetpack Compose, all data stored on the phone (no account, no server).
+A HealthifyMe-style health tracker built for Indian food. Two parts:
 
-## What it does
-- **Home** – calories ring (eaten / burned / left), protein-carbs-fat bars, water glasses, daily supplement checklist, weight · sleep · steps log, coach tips (e.g. how much protein is left and quick ways to hit it)
-- **Food** – Breakfast / Lunch / Snacks / Dinner logging from ~90 Indian foods (idli, pesarattu, pappu, gongura chicken, biryani…), servings in 0.5 steps, recent foods first, custom foods, "Repeat yesterday"
-- **Workout** – strength (sets × reps × kg) and cardio (minutes), calorie burn estimate (MET-based), personal-best tracking
-- **Progress** – weight trend vs goal, 7-day calories and protein charts, logging streak, BMI (Asian cut-offs)
-- **Me** – profile; targets auto-calculated (Mifflin-St Jeor BMR × activity, ±goal; protein 1.8–2 g/kg)
+- **Website** (`web/`) – the main app now: Google sign-in, AI photo scanning, full micronutrients. Hosted on GitHub Pages.
+- **Android app** (`app/`) – Kotlin + Jetpack Compose, APK built by GitHub Actions (earlier version, no AI yet).
 
-Back navigation between days with the ‹ › bar at the top.
+Live site: https://revanthvelaga.github.io/2026-vrk-healthyfy/
 
-## Build
-Push to GitHub – the workflow in `.github/workflows/build.yml` builds debug + release APKs.
+---
+
+## Website features
+- **Login** – Continue with Google (Firebase), or use without an account (data stays on the device). Signed-in data syncs across phone and laptop.
+- **Onboarding** – 4 steps, then your daily calories, protein, carbs and fat (Mifflin-St Jeor BMR × activity, −500 to lose / +300 to gain).
+- **Home** – week strip with daily rings, animated calorie ring (eaten / burned / left), macro bars, **Nutrients** card that expands to fibre, sugar, saturated fat, cholesterol, 6 minerals and 5 vitamins against ICMR-NIN 2020 daily values, meals, water glass, supplements checklist, body stats, insights.
+- **Add food** – search 83 Indian foods, or **Ask AI** with plain text ("2 idli with sambar and filter coffee") to get every nutrient. Pick a food to see a macro donut, change servings, and its vitamins and minerals.
+- **Scan photo** – take or upload a plate photo; Gemini identifies each item, estimates portions and nutrients. Adjust quantities, then add all.
+- **Diary** – tap any entry to expand macros and micronutrients, change servings, remove. "Repeat yesterday" per meal. Workout log with calorie estimates and personal bests.
+- **Progress** – weight trend vs goal, 7-day calories and protein, vitamin & mineral averages, streak, BMI.
+- **Me** – edit goals, AI settings, supplements, light/dark theme, export data as JSON, clear logs, sign out.
+- Installable: on Android Chrome use **Add to Home screen** and it opens like an app.
+
+## Setup (one time, about 10 minutes)
+
+### 1. Turn on GitHub Pages
+Repo → **Settings → Pages** → Source: *Deploy from a branch* → Branch: `gh-pages`, folder `/ (root)` → Save.
+
+### 2. Google sign-in (Firebase, free)
+1. Go to https://console.firebase.google.com → **Create a project** (Google Analytics not needed).
+2. **Build → Authentication → Get started → Sign-in method → Google → Enable** → Save.
+3. **Authentication → Settings → Authorized domains → Add domain** → `revanthvelaga.github.io`
+4. **Build → Firestore Database → Create database** → choose a region (e.g. `asia-south1` Mumbai) → *Production mode*.
+5. Firestore → **Rules** tab → paste the contents of `web/firestore.rules` → **Publish**.
+6. **Project settings (⚙️) → Your apps → Web (</>)** → register app "Healthyfi" → copy the `firebaseConfig` values into `web/config.js`, commit, and update the `gh-pages` branch.
+
+The Firebase web config is safe to keep in a public repo; the Firestore rules are what keep each person's data private.
+
+### 3. Gemini AI key (free)
+1. Open https://aistudio.google.com/apikey → **Create API key** → copy.
+2. In Healthyfi: **Me → AI settings** → paste → **Test key** → Save.
+
+The key is kept in your browser (and optionally in your own account), never in the repo.
+
+## Run locally
+```
+cd web
+python3 -m http.server 8080
+```
+Open http://localhost:8080 (add `localhost` to Firebase authorized domains to test sign-in).
+
+## Android app
+Push to GitHub – `.github/workflows/build.yml` builds debug + release APKs.
 Download from **Actions → latest run → Artifacts → healthyfi-apk**.
-
-Local: open in Android Studio, or `./gradlew assembleDebug`.
-
 Stack: AGP 8.5.2 · Kotlin 2.0.20 · Compose BOM 2024.09 · minSdk 26 · targetSdk 34.
 
-Food values are approximate per typical home serving — edit `FoodDb.kt` or add custom foods in the app.
+Nutrition values are estimates, not medical advice.
