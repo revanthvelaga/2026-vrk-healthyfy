@@ -12,10 +12,12 @@ Live site: https://revanthvelaga.github.io/2026-vrk-healthyfy/
 ## Website features
 - **Login** – Continue with Google (Firebase), or use without an account (data stays on the device). Signed-in data syncs across phone and laptop.
 - **Onboarding** – 4 steps, then your daily calories, protein, carbs and fat (Mifflin-St Jeor BMR × activity, −500 to lose / +300 to gain).
-- **Home** – week strip with daily rings, animated calorie ring (eaten / burned / left), macro bars, **Nutrients** card that expands to fibre, sugar, saturated fat, cholesterol, 6 minerals and 5 vitamins against ICMR-NIN 2020 daily values, meals, water glass, supplements checklist, body stats, insights.
-- **Add food** – search 83 Indian foods, or **Ask AI** with plain text ("2 idli with sambar and filter coffee") to get every nutrient. Pick a food to see a macro donut, change servings, and its vitamins and minerals.
-- **Scan photo** – take or upload a plate photo; Gemini identifies each item, estimates portions and nutrients. Adjust quantities, then add all.
-- **Diary** – tap any entry to expand macros and micronutrients, change servings, remove. "Repeat yesterday" per meal. Workout log with calorie estimates and personal bests.
+- **Home** – week strip with daily rings, calories-left hero with ring, protein / carbs / fat "left" cards, 5 meals (breakfast, morning snack, lunch, evening snack, dinner) with recommended calorie ranges, **Nutrients** card that expands to fibre, sugar, saturated fat, cholesterol, 6 minerals and 5 vitamins against ICMR-NIN 2020 daily values, tappable water glasses, steps / weight / sleep, supplements, coach tips.
+- **Add food** (full screen) – 260 foods in 17 categories with Telugu/Hindi names (pappu, perugu, avakaya, atukulu…). Tap **+** to drop items into a tray, adjust with − / +, then **Done** logs them all. Picking a dish shows **Goes well with** suggestions (idli → sambar, chutneys, podi, ghee, vada, filter coffee).
+- **Food detail** – quantity stepper with real units (piece, mini idli, katori 150 g, bowl 250 g, tbsp, grams), macro split bar, nutrition facts, vitamins & minerals via AI.
+- **Ask AI / Describe** – type any dish or a whole meal ("3 idli, sambar and a filter coffee") and get every nutrient.
+- **Scan photo** – take or upload a plate photo; Gemini identifies each item and estimates portions. Adjust quantities, then add to the tray.
+- **Diary** – tap any logged food to change its quantity or unit, or delete it. "Repeat yesterday" per meal. Exercise log with calorie estimates and personal bests.
 - **Progress** – weight trend vs goal, 7-day calories and protein, vitamin & mineral averages, streak, BMI.
 - **Me** – edit goals, AI settings, supplements, light/dark theme, export data as JSON, clear logs, sign out.
 - Installable: on Android Chrome use **Add to Home screen** and it opens like an app.
@@ -54,3 +56,8 @@ Download from **Actions → latest run → Artifacts → healthyfi-apk**.
 Stack: AGP 8.5.2 · Kotlin 2.0.20 · Compose BOM 2024.09 · minSdk 26 · targetSdk 34.
 
 Nutrition values are estimates, not medical advice.
+
+## Food database
+`web/js/foods.js` is generated from `tools/build_foods.py` (per-100 g values, serving units, aliases, pairings). Edit the Python file and run `python3 tools/build_foods.py` to add foods.
+
+3D food icons: [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji), MIT licence (`web/img/3d/LICENSE-fluentui-emoji`).
