@@ -41,7 +41,7 @@ function totals(date) {
     ALL_KEYS.forEach((k) => (t[k] += (e.n[k] || 0) * e.qty));
     if (hasMicros(e.n)) withMicros++;
   });
-  return { ...t, count: foods.length, withMicros };
+  return { ...t, count: foods.length, withMicros, coverage: Object.fromEntries(ALL_KEYS.map(k => [k, foods.filter(e => typeof e.n[k] === "number").length])) };
 }
 const burned = (date) => day(date).workouts.reduce((a, w) => a + (w.kcal || 0), 0);
 function streak() {
@@ -148,7 +148,7 @@ function render(forceEnter = false) {
   const enter = forceEnter || key !== ui.lastScreen;
   ui.lastScreen = key;
   const view = { home: homeView, diary: diaryView, progress: progressView, me: meView }[ui.tab]();
-  app.innerHTML = `<main class="screen ${enter ? "enter" : ""}">${view}</main>`;
+  app.innerHTML = `<aside class="rail"><div class="brandmark">h<span>•</span></div><div class="logo">Health<i>yfi</i></div><p>YOUR DAILY WELLNESS SPACE</p><div class="rail-links">${[["home","Overview",I.home],["diary","Food & activity",I.diary],["progress","Your progress",I.chart],["me","Profile & goals",I.me]].map(([k,l,ic])=>`<button data-a="tab" data-v="${k}" class="${ui.tab===k?"active":""}">${ic}${l}</button>`).join("")}</div><div class="rail-note"><span>Small steps.<br>Stronger you.</span><p>A little consistency goes a long way.</p></div></aside><main class="screen screen-${ui.tab} ${enter ? "enter" : ""}">${view}</main>`;
   tb.hidden = false;
   renderTabbar();
   runAnimations();
@@ -172,20 +172,15 @@ function renderTabbar() {
 
 // ================= login =================
 function loginView() {
-  const bubbles = [["🥗", 8, 10], ["🍳", 70, 6], ["🥑", 40, 18], ["🍎", 80, 26], ["🥛", 12, 32], ["🍛", 56, 36], ["💪", 26, 44]].map(([e, l, t]) => [e, l, t * 1.6]);
-  return `<section class="login">
-    <div class="bubbles">${bubbles.map(([e, l, t], i) => `<span style="left:${l}%;top:${t}%;animation-delay:${i * -0.9}s">${e}</span>`).join("")}</div>
-    <div style="position:relative">
-      <div class="logo">Health<i>yfi</i></div>
-      <p class="tag">Snap your plate, see every calorie, protein gram and vitamin. Built for Indian food.</p>
-      <div class="feat"><span>📸 AI photo scan</span><span>🧬 Micronutrients</span><span>🍛 Indian foods</span><span>🔥 Streaks</span></div>
-    </div>
-    <div style="position:relative;display:flex;flex-direction:column;gap:12px">
-      ${ui.loginErr ? `<div class="err">${esc(ui.loginErr)}</div>` : ""}
-      <button class="gbtn" data-a="google">${I.google} Continue with Google</button>
-      <button class="guest" data-a="guest">Use without an account</button>
-      <p class="fine">Without an account, your data stays on this device only.</p>
-    </div>
+  return `<section class="login premium-login">
+    <div class="login-story"><div class="login-brand"><span class="brandmark">h<span>•</span></span><div class="logo">Health<i>yfi</i></div></div>
+    <span class="editorial-kicker">A LITTLE BETTER, EVERY DAY</span><h1>Feel good.<br>Eat well.<br><em>Live better.</em></h1><p class="story-copy">Your food, movement and daily habits.<br>One beautiful space to bring it all together.</p>
+    <div class="wellness-art" aria-hidden="true"><div class="art-orbit"></div><svg viewBox="0 0 400 300"><defs><radialGradient id="plate"><stop stop-color="#fffdf2"/><stop offset="1" stop-color="#d9e4cf"/></radialGradient></defs><ellipse cx="200" cy="260" rx="135" ry="17" fill="#172f22" opacity=".12"/><circle cx="200" cy="150" r="125" fill="url(#plate)"/><circle cx="200" cy="150" r="104" fill="#f9fbec" stroke="#ccd9bf" stroke-width="2"/><g fill="#3e7445">${[0,40,80,120,160].map((r)=>`<ellipse cx="167" cy="133" rx="28" ry="51" transform="rotate(${r} 180 150)"/>`).join("")}</g><g fill="#e78a57"><circle cx="247" cy="109" r="22"/><circle cx="267" cy="146" r="24"/><circle cx="240" cy="177" r="24"/></g><path d="M156 190 Q202 143 227 205 Q191 247 156 190" fill="#a9bd61"/><path d="M165 191 Q201 164 217 203 Q190 229 165 191" fill="#dbe7a1"/><ellipse cx="193" cy="201" rx="13" ry="16" fill="#795538"/><g fill="#f1d892"><circle cx="193" cy="105" r="9"/><circle cx="210" cy="123" r="8"/><circle cx="183" cy="124" r="9"/></g></svg><div class="art-tag tag-one"><span>↗</span><div>Make every meal count<small>Food, with a little more insight.</small></div></div><div class="art-tag tag-two"><span>✦</span><div>Built around you<small>Your goals. Your pace.</small></div></div></div>
+    <div class="story-footer">NOURISH YOUR BODY. FIND YOUR BALANCE.</div></div>
+    <div class="login-action"><span class="editorial-kicker">WELCOME TO HEALTHYFI</span><h2>Your healthier<br>chapter starts here.</h2><p class="muted">Build habits that feel as good as they look.</p><div class="login-benefits"><div><span>◉</span><b>Understand your plate</b><p>Calories, macros and nutrient insights.</p></div><div><span>↗</span><b>See your progress</b><p>Track movement, hydration and weight.</p></div><div><span>✧</span><b>Log with a photo</b><p>Optional AI scanning with your own key.</p></div></div>
+    ${ui.loginErr ? `<div class="err">${esc(ui.loginErr)}</div>` : ""}
+    ${store.firebaseConfigured() ? `<button class="gbtn" data-a="google">${I.google} Continue with Google</button>` : ""}
+    <button class="btn lg block" data-a="guest">${store.firebaseConfigured()?"Use without an account":"Start my wellness journey"}<span>↗</span></button><p class="fine">Your logs stay on this device${store.firebaseConfigured()?" unless you sign in":". Export them anytime from your profile"}.</p></div>
   </section>`;
 }
 
@@ -265,12 +260,12 @@ function homeView() {
   const initials = (p.name || S.user?.name || "?").slice(0, 1).toUpperCase();
   return `
   <header class="topbar">
-    <button class="avatar" data-a="tab" data-v="me" aria-label="Profile">${S.user?.photo ? `<img src="${esc(S.user.photo)}" alt="" referrerpolicy="no-referrer">` : initials}</button>
+    <button class="avatar" data-a="tab" data-v="me" aria-label="Profile">${S.user?.photo ? `<img src="${esc(S.user.photo)}" alt="" referrerpolicy="no-referrer">` : esc(initials)}</button>
     <div class="hi"><p class="muted small">${hello}</p><h1>${esc(p.name || "there")}</h1></div>
     <span class="chip-streak" title="Days in a row with food logged">🔥 ${st}</span>
   </header>
-  ${weekStrip()}
-  <section class="hero">
+  <div class="dashboard-heading"><div><span class="eyebrow">YOUR DAILY WELLNESS SPACE</span><h2>A little better, every day.</h2></div><button class="btn" data-a="fab">+ Quick log</button></div>${weekStrip()}
+  <section class="hero calorie-card">
     <div class="top"><span class="eyebrow">${dateTitle()}</span><span class="badge">Goal ${target} kcal</span></div>
     <div class="hero-main">
       <div class="hstat"><b>${aNum("eaten", R(t.kcal))}</b><span>Eaten</span></div>
@@ -284,7 +279,7 @@ function homeView() {
   </section>
   ${nutrientsCard(t)}
   <section class="card">
-    <div class="card-h"><h2>Meals</h2><button class="link" data-a="tab" data-v="diary">Diary ›</button></div>
+    <div class="card-h"><h2>Your plate today</h2><button class="link" data-a="tab" data-v="diary">Diary ›</button></div>
     <div>${MEALS.map((m) => { const items = d.foods.filter((e) => e.meal === m.k), k = items.reduce((a, e) => a + e.n.kcal * e.qty, 0);
       return `<div class="meal"><div class="mic" style="background:${mealBg(m)}">${m.e}</div><div class="grow"><b>${m.k}</b><p>${items.length ? esc(items.map((e) => e.name).join(", ")) : "Nothing logged"}</p></div>
         <span class="num" style="font-size:15px">${R(k)}<span class="muted xs"> kcal</span></span><button class="plus" data-a="add" data-m="${m.k}" aria-label="Add to ${m.k}">+</button></div>`; }).join("")}</div>
@@ -292,13 +287,13 @@ function homeView() {
   ${waterCard(d)}
   ${p.supplements.length ? `<section class="card"><div class="card-h"><h2>Supplements</h2><span class="meta">${p.supplements.filter((s) => d.supps.includes(s)).length} of ${p.supplements.length}</span></div>
     <div class="pills">${p.supplements.map((s, i) => `<button class="pill ${d.supps.includes(s) ? "on" : ""}" data-a="supp" data-i="${i}"><span class="tick">✓</span>${esc(s)}</button>`).join("")}</div></section>` : ""}
-  <section class="card"><div class="card-h"><h2>Body</h2><button class="link" data-a="body">Update ›</button></div>
+  <section class="card"><div class="card-h"><h2>Your daily rhythm</h2><button class="link" data-a="body">Update ›</button></div>
     <div class="tiles">
       <button class="tile" data-a="body"><span class="ic">⚖️</span><b>${d.body.w ? fmt(d.body.w) : "–"}</b><span>kg weight</span></button>
       <button class="tile" data-a="body"><span class="ic">😴</span><b>${d.body.sleep ? fmt(d.body.sleep) : "–"}</b><span>h sleep</span></button>
       <button class="tile" data-a="body"><span class="ic">👟</span><b>${d.body.steps ? (d.body.steps / 1000).toFixed(1) + "k" : "–"}</b><span>of ${(p.stepsTarget / 1000).toFixed(0)}k steps</span></button>
     </div></section>
-  <section class="card insight"><div class="card-h"><h2>Today's insight</h2><span>✨</span></div><ul>${insights().map((x) => `<li><span>${x}</span></li>`).join("")}</ul></section>`;
+  <section class="card insight"><div class="card-h"><h2>A little guidance</h2><span>✨</span></div><ul>${insights().map((x) => `<li><span>${x}</span></li>`).join("")}</ul></section>`;
 }
 
 function pctClass(n, v, g) {
@@ -310,12 +305,12 @@ function nutrientsCard(t) {
   const pick = ["fiber", "sodium", "iron", "calcium", "vitC", "vitB12"].map((k) => all.find((n) => n.k === k));
   const missing = t.count - t.withMicros;
   const row = (n) => { const g = nGoal(n), v = t[n.k] || 0;
-    return `<div class="nrow"><span>${n.label}${n.limit ? ' <span class="muted xs">limit</span>' : ""}</span><span class="v">${fmt(R(v * 10) / 10)}<small> / ${g} ${n.unit}</small></span>
+    return `<div class="nrow"><span>${n.label}${n.limit ? ' <span class="muted xs">limit</span>' : ""}</span><span class="v">${t.coverage[n.k] ? fmt(R(v * 10) / 10) : "—"}<small> / ${g} ${n.unit}${t.coverage[n.k] < t.count ? " · partial" : ""}</small></span>
       <div class="mini"><i class="${pctClass(n, v, g)}" ${aBar("n" + n.k, (v / g) * 100)}></i></div></div>`; };
   return `<section class="card ${ui.nutrOpen ? "open-chev" : ""}">
-    <div class="card-h"><h2>Nutrients</h2><button class="link" data-a="nutr">${ui.nutrOpen ? "Less" : "All nutrients"} <span class="chev">⌄</span></button></div>
-    <div class="nchips">${pick.map((n) => { const g = nGoal(n), v = t[n.k] || 0;
-      return `<div class="nchip"><span class="l">${n.label}</span><b>${fmt(R(v * 10) / 10)}<span class="muted xs"> ${n.unit}</span></b><div class="mini"><i class="${pctClass(n, v, g)}" ${aBar("c" + n.k, (v / g) * 100)}></i></div></div>`; }).join("")}</div>
+    <div class="card-h"><h2>Nutrient balance</h2><button class="link" data-a="nutr">${ui.nutrOpen ? "Less" : "All nutrients"} <span class="chev">⌄</span></button></div>
+    <p class="muted xs">${t.count ? "Based on logged foods. Missing nutrient values are shown as —; available totals may be partial." : "Log a meal to see your nutrient intake."}</p><div class="nchips">${pick.map((n) => { const g = nGoal(n), v = t[n.k] || 0;
+      return `<div class="nchip"><span class="l">${n.label}</span><b>${t.coverage[n.k] ? fmt(R(v * 10) / 10) : "—"}<span class="muted xs"> ${n.unit}</span></b><div class="mini"><i class="${pctClass(n, v, g)}" ${aBar("c" + n.k, (v / g) * 100)}></i></div></div>`; }).join("")}</div>
     ${missing > 0 ? `<div class="missing"><span>🧬</span><span class="grow">${missing} food${missing > 1 ? "s" : ""} without vitamin & mineral data</span><button class="btn sm saffron" data-a="enrich-day" ${ui.busy.enrichDay ? "disabled" : ""}>${ui.busy.enrichDay ? "Fetching…" : "Fetch with AI"}</button></div>` : ""}
     <div class="collapse ${ui.nutrOpen ? "open" : ""}"><div><div class="ngroup" style="padding-top:4px">
       <p class="eyebrow">More macros</p>${DETAIL_MACROS.map(row).join("")}
@@ -329,7 +324,7 @@ function nutrientsCard(t) {
 function waterCard(d) {
   const p = P(), frac = Math.min(1, d.water / p.waterTarget);
   ui.next.water = frac * 100;
-  return `<section class="card"><div class="card-h"><h2>Water</h2><span class="meta">${d.water * 250} / ${p.waterTarget * 250} ml</span></div>
+  return `<section class="card"><div class="card-h"><h2>Stay hydrated</h2><span class="meta">${d.water * 250} / ${p.waterTarget * 250} ml</span></div>
     <div class="water">
       <div class="glass"><div class="fill" style="height:${prevOf("water", 0)}%" data-akey="water" data-prop="height" data-to="${frac * 100}">
         <svg class="wave" viewBox="0 0 300 12" preserveAspectRatio="none"><path d="M0 6 Q 12.5 0 25 6 T 50 6 T 75 6 T 100 6 T 125 6 T 150 6 T 175 6 T 200 6 T 225 6 T 250 6 T 275 6 T 300 6 V12 H0z"/></svg></div></div>
@@ -347,7 +342,7 @@ function insights() {
   if (pl > 10) out.push(`<b>${pl} g protein</b> to go. Whey scoop 24 g, 100 g chicken breast 31 g, 100 g paneer 18 g, 50 g soya chunks 26 g.`);
   else if (d.foods.length) out.push("Protein goal hit. Nice work 💪");
   if (left < -150) out.push(`You're <b>${-left} kcal over</b>. A 30-minute brisk walk burns about 150 kcal.`);
-  if (t.withMicros) {
+  if (t.withMicros === t.count && t.count) {
     const low = MICROS.filter((n) => n.goal && t[n.k] < nGoal(n) * 0.5).map((n) => n.label).slice(0, 3);
     if (low.length && new Date().getHours() >= 18) out.push(`Running low on ${low.join(", ")} today.`);
     if (t.sodium > 2000) out.push(`Sodium is at ${R(t.sodium)} mg, above the 2,000 mg limit. Go easy on pickles and papad.`);
@@ -482,7 +477,7 @@ function meView() {
   <section class="card" style="flex-direction:row;align-items:center;gap:14px">
     <div class="avatar" style="width:58px;height:58px;font-size:22px">${S.user?.photo ? `<img src="${esc(S.user.photo)}" alt="" referrerpolicy="no-referrer">` : esc((p.name || "?").slice(0, 1).toUpperCase())}</div>
     <div style="flex:1;min-width:0"><b style="font-size:17px">${esc(S.user?.name || p.name || "Guest")}</b><p class="muted small" style="overflow:hidden;text-overflow:ellipsis">${cloud ? esc(S.user.email) : "Not signed in · data on this device"}</p>
-      <p class="xs" style="margin-top:4px"><span class="status-dot ${cloud ? "ok" : ""}"></span>${cloud ? "Synced to your account" : "Local only"}</p></div>
+      <p class="xs" style="margin-top:4px"><span class="status-dot ${cloud ? "ok" : ""}"></span>${cloud ? esc(S.syncStatus) : "Saved on this device"}</p></div>
   </section>
   <section class="hero" style="gap:12px"><div class="top"><span class="eyebrow">Daily plan</span><span class="badge">${{ lose: "Lose fat", maintain: "Stay fit", gain: "Build muscle" }[p.goal]}</span></div>
     <div class="hero-macros" style="grid-template-columns:repeat(4,1fr)"><div class="hm"><b>${kcalTarget()}</b><span class="xs">kcal</span></div>${MACROS.map((m) => `<div class="hm"><b>${macroTarget(m.k)}g</b><span class="xs">${m.label}</span></div>`).join("")}</div></section>
@@ -497,9 +492,9 @@ function meView() {
     <button class="li" data-a="export"><span class="ic">📦</span><span class="grow"><b>Export my data</b><span>Download everything as a JSON file</span></span><span class="go">›</span></button>
     <button class="li" data-a="clear"><span class="ic">🧹</span><span class="grow"><b>Clear all logs</b><span>Keeps your profile and goals</span></span><span class="go">›</span></button>
     ${cloud ? `<button class="li" data-a="signout"><span class="ic">🚪</span><span class="grow"><b>Sign out</b></span></button>`
-      : `<button class="li" data-a="signin"><span class="ic">🔐</span><span class="grow"><b>Sign in with Google</b><span>Back up and sync across devices</span></span><span class="go">›</span></button>`}
+      : store.firebaseConfigured() ? `<button class="li" data-a="signin"><span class="ic">🔐</span><span class="grow"><b>Sign in with Google</b><span>Back up and sync across devices</span></span><span class="go">›</span></button>` : ""}
   </div>
-  <p class="muted xs" style="text-align:center">Healthyfi 2.0 · nutrition values are estimates, not medical advice</p>`;
+  <p class="muted xs" style="text-align:center">Healthyfi 3.0 · nutrition values are estimates, not medical advice</p>`;
 }
 
 // ================= sheets =================
