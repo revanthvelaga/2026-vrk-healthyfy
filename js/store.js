@@ -18,7 +18,6 @@ export const S = {
   days: {},
   user: null, // {uid, name, email, photo}
   mode: "loading", // loading | signedout | guest | cloud
-  syncStatus: "Connecting to account…",
   geminiKey: "",
 };
 
@@ -43,7 +42,7 @@ function lsLoad(key = lsKey()) {
   try {
     const o = JSON.parse(localStorage.getItem(key) || "null");
     if (!o) return null;
-    return { profile: { ...DEFAULT_PROFILE, ...o.profile }, customFoods: o.customFoods || [], cache: o.cache || {}, days: Object.fromEntries(Object.entries(o.days || {}).map(([k,v]) => [k, { ...emptyDay(), ...v, foods: Array.isArray(v.foods) ? v.foods : [], workouts: Array.isArray(v.workouts) ? v.workouts : [], body: v.body || {}, supps: Array.isArray(v.supps) ? v.supps : [] }])) };
+    return { profile: { ...DEFAULT_PROFILE, ...o.profile }, customFoods: o.customFoods || [], cache: o.cache || {}, days: o.days || {} };
   } catch {
     return null;
   }
@@ -149,10 +148,9 @@ function connectCloud(uid) {
     S.cache = v.cache || {};
     if (v.geminiKey && !localKey()) setLocalKey(v.geminiKey);
     S.geminiKey = v.geminiKey || "";
-    S.syncStatus = snap.metadata.fromCache ? "Offline cache · awaiting cloud" : "Synced to your account";
     lsSave();
     emit();
-  }, (error) => { S.syncStatus = "Cloud unavailable · saved on this device"; console.warn("Cloud read failed", error.code); emit(); });
+  });
   unsubDays = fs.onSnapshot(fs.collection(db, "users", uid, "days"), (snap) => {
     snap.docChanges().forEach((ch) => {
       const id = ch.doc.id;
@@ -163,10 +161,9 @@ function connectCloud(uid) {
         S.days[id] = { foods: v.foods || [], workouts: v.workouts || [], body: v.body || {}, water: v.water || 0, supps: v.supps || [] };
       }
     });
-    S.syncStatus = snap.metadata.fromCache ? "Offline cache · awaiting cloud" : "Synced to your account";
     lsSave();
     emit();
-  }, (error) => { S.syncStatus = "Cloud unavailable · saved on this device"; console.warn("Cloud read failed", error.code); emit(); });
+  });
 }
 
 function localKey() {
@@ -196,7 +193,6 @@ function startGuest() {
 export const continueAsGuest = startGuest;
 
 export async function signInWithGoogle() {
-  if (!firebaseConfigured()) throw new Error("Google sign-in is not configured. Use this device without an account.");
   await loadFirebase();
   const { au, auth } = fb;
   const provider = new au.GoogleAuthProvider();
@@ -230,42 +226,34 @@ export async function signOut() {
 function schedule(key, write) {
   lsSave();
   if (S.mode !== "cloud" || !fb || !S.user) return;
-  S.syncStatus = "Saving changes…";
   pending.add(key);
   clearTimeout(timers[key]);
   timers[key] = setTimeout(async () => {
     delete timers[key];
     try {
       await write();
-      S.syncStatus = "Synced to your account";
     } catch (e) {
-      S.syncStatus = "Sync failed · saved on this device";
-      console.warn("sync failed", e.code);
+      console.warn("sync failed", e);
     }
     if (!timers[key]) pending.delete(key);
-    emit();
   }, 600);
 }
 
 export function saveProfile() {
-  const userId = S.user?.uid;
-  const payload = JSON.parse(JSON.stringify({ profile: S.profile, customFoods: S.customFoods, cache: trimCache(), updatedAt: Date.now() }));
   schedule("user", () => {
     const { fs, db } = fb;
     return fs.setDoc(
-      fs.doc(db, "users", userId),
-      payload,
+      fs.doc(db, "users", S.user.uid),
+      JSON.parse(JSON.stringify({ profile: S.profile, customFoods: S.customFoods, cache: trimCache(), updatedAt: Date.now() })),
       { merge: true },
     );
   });
 }
 
 export function saveDay(d) {
-  const userId = S.user?.uid;
-  const payload = JSON.parse(JSON.stringify({ date: d, ...day(d) }));
   schedule("d" + d, () => {
     const { fs, db } = fb;
-    return fs.setDoc(fs.doc(db, "users", userId, "days", d), payload);
+    return fs.setDoc(fs.doc(db, "users", S.user.uid, "days", d), JSON.parse(JSON.stringify({ date: d, ...day(d) })));
   });
 }
 
